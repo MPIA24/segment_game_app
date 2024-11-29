@@ -1,5 +1,6 @@
 maptilersdk.config.apiKey = 'IOB0c3pObw5n5M6qkQcE';
 
+
 async function fetchAllPoi() {
     try {
         const response = await fetch('http://localhost:8000/api/batiments', {
@@ -59,10 +60,10 @@ async function populateChapters() {
 
         // Créer un chapitre pour chaque POI
         chapters[name] = {
-            bearing: 0,  // L'angle de rotation (à ajuster selon le POI)
+            bearing: random(-180,180),
             center: feature.geometry.coordinates,  // Coordonnées de chaque POI
             zoom: 16,  // Le niveau de zoom (à ajuster en fonction du besoin)
-            pitch: 20, // Inclinaison de la caméra (ajuster au besoin)
+            pitch: 60, // Inclinaison de la caméra (ajuster au besoin)
         };
     });
 
@@ -164,7 +165,7 @@ var map = new maptilersdk.Map({
     container: 'map',
     style: maptilersdk.MapStyle.STREETS,
     center: [-0.38, 49.17],
-    zoom: 12,
+    zoom: 10,
 });
 
 // Initialisation de la map et des interactions
@@ -179,6 +180,64 @@ map.on('load', async function () {
             map.removeLayer(layers[i].id);
         }
     }
+
+    const geoJson = await getPOI(); // Obtenez les données GeoJSON
+    
+    // Ajouter une source GeoJSON pour les POIs
+    map.addSource('pois', {
+        type: 'geojson',
+        data: geoJson,
+    });
+
+    // Ajouter une couche pour afficher les pointeurs sur les POIs
+    map.addLayer({
+        id: 'poi-markers',
+        type: 'circle',
+        source: 'pois',
+        paint: {
+            'circle-radius': 8,
+            'circle-color': '#007cbf',
+        },
+    });
+
+    // Associer un événement au clic sur les pointeurs
+    map.on('click', 'poi-markers', function (e) {
+        const coordinates = e.features[0].geometry.coordinates.slice();
+        const properties = e.features[0].properties;
+
+        // Défilement vers la section correspondant au POI
+        const targetSection = document.getElementById(properties.id);
+        if (targetSection) {
+            targetSection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Déplacer la vue de la carte vers le POI cliqué
+        map.flyTo({
+            center: coordinates,
+            zoom: 16,
+            pitch: 60,
+            bearing: 0,
+            speed: 1.5,
+            curve: 1,
+        });
+
+        // Ajouter une popup
+        new maptilersdk.Popup()
+            .setLngLat(coordinates)
+            .setHTML(`<h3>${properties.name}</h3><p>${properties.description}</p>`)
+            .addTo(map);
+    });
+
+    // Changer le curseur de la souris lorsqu'il survole un pointeur
+    map.on('mouseenter', 'poi-markers', function () {
+        map.getCanvas().style.cursor = 'pointer';
+    });
+
+    map.on('mouseleave', 'poi-markers', function () {
+        map.getCanvas().style.cursor = '';
+    });
+
+
 
     map.addLayer({
         'id': '3d-buildings',
@@ -212,6 +271,29 @@ map.on('load', async function () {
     });
 
     // Logic for changing the map view based on scroll
+   
+    function setActiveChapter(chapterId) {
+        if (chapterId === activeChapterId) return;
+        const chapter = chapters[chapterId];
+        const randomAngle = Math.random()*180;
+        map.flyTo({
+            center: chapter.center,
+            zoom: chapter.zoom,
+            pitch: chapter.pitch,
+            bearing: randomAngle,
+            speed: 1.5, 
+            curve: 1,
+        });
+
+        const targetSection = document.getElementById(properties.id)
+        if (targetSection) {
+            const topOffset = targetSection.getBoundingClientRect().top + window.pageYOffset - 10; // Ajout du décalage
+            window.scrollTo({ top: topOffset, behavior: 'smooth' });
+        }
+    
+        activeChapterId = chapterId;
+    }
+
     window.onscroll = function () {
         var chapterIds = Object.keys(chapters);
         for (var i = 0; i < chapterIds.length; i++) {
@@ -223,17 +305,6 @@ map.on('load', async function () {
         }
     };
 
-    function setActiveChapter(chapterId) {
-        if (chapterId === activeChapterId) return;
-
-        map.flyTo(chapters[chapterId]);
-
-        document.getElementById(chapterId).setAttribute('class', 'active');
-        document.getElementById(activeChapterId).setAttribute('class', '');
-
-        activeChapterId = chapterId;
-    }
-
     function isElementOnScreen(id) {
         var element = document.getElementById(id);
         if (!element) return false; // Sécuriser l'accès à l'élément
@@ -242,7 +313,10 @@ map.on('load', async function () {
     }
 });
 
+
+
 // Appeler la fonction pour peupler les descriptions au chargement de la page
 window.onload = function() {
     populateBuildingDescriptions();
 };
+
