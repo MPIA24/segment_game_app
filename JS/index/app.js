@@ -48,28 +48,6 @@ async function getPOI() {
     return getGeoJsonFromJson(data);
 }
 
-// Fonction pour ajouter des POIs dans les chapitres
-async function populateChapters() {
-    const geoJson = await getPOI();
-    
-    let chapters = {};
-
-    geoJson.features.forEach((feature, index) => {
-        const { properties } = feature;
-        const { id, name } = properties;
-
-        // Créer un chapitre pour chaque POI
-        chapters[name] = {
-            bearing: random(-180,180),
-            center: feature.geometry.coordinates,  // Coordonnées de chaque POI
-            zoom: 16,  // Le niveau de zoom (à ajuster en fonction du besoin)
-            pitch: 60, // Inclinaison de la caméra (ajuster au besoin)
-        };
-    });
-
-    return chapters;
-}
-
 // Map initialisation
 var map = new maptilersdk.Map({
     container: 'map',
@@ -116,25 +94,6 @@ async function populateChapters() {
     });
 
     return chapters;
-}
-
-// Fonction pour ajouter une description pour chaque bâtiment
-function createBuildingDescription(batiment) {
-    const section = document.createElement('section');
-    const id = batiment.id;  // Utiliser l'ID du bâtiment comme ID de la section
-    section.id = id;
-
-    const h3 = document.createElement('h3');
-    h3.textContent = batiment.name;
-
-    const p = document.createElement('p');
-    p.textContent = batiment.description;
-
-    // Ajouter les éléments créés dans la section
-    section.appendChild(h3);
-    section.appendChild(p);
-
-    return section;
 }
 
 // Fonction pour peupler la page avec les descriptions des bâtiments

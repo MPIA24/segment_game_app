@@ -1,10 +1,9 @@
-// Gestion de la connexion
-// Gestion de la connexion
+// Getting login form data
 document.getElementById('loginForm')?.addEventListener('submit', async (event) => {
     event.preventDefault();
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
-
+//creating fetch request
     const response = await fetch('http://localhost:8000/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -14,42 +13,28 @@ document.getElementById('loginForm')?.addEventListener('submit', async (event) =
     const result = await response.json();
 
     const messageBox = document.getElementById('message');
+//check response
     if (response.ok) {
         messageBox.textContent = 'Connexion réussie !';
         messageBox.style.color = 'green';
 
-        // Stocker le user_id dans un cookie de session
-        document.cookie = `user_id=${result.user_id}; path=/;`;
-
-        // Rediriger l'utilisateur
-        window.location.href = 'index.html'; // Exemple : redirection vers une page de tableau de bord
+//store user ID from response into session cookie then redirect on homepage
+        document.cookie = `user_id=${result.user.id}; path=/;`;
+        window.location.href = 'index.html';
     } else {
+//or display the error message
         messageBox.textContent = result.message || 'Une erreur est survenue.';
     }
 });
 
-// Fonction utilitaire pour lire un cookie par nom
-function getCookie(name) {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
-}
-
-// Exemple d'utilisation pour vérifier l'utilisateur connecté
-const userId = getCookie('user_id');
-if (userId) {
-    console.log(`Utilisateur connecté avec ID : ${userId}`);
-}
-
-
-// Gestion de l'inscription
+// getting form result 
 document.getElementById('registerForm')?.addEventListener('submit', async (event) => {
     event.preventDefault();
     const name = document.getElementById('name').value;
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
     const password_confirmation = document.getElementById('password_confirmation').value;
-
+// creating fetch request
     const response = await fetch('http://localhost:8000/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -59,14 +44,17 @@ document.getElementById('registerForm')?.addEventListener('submit', async (event
     const result = await response.json();
 
     const messageBox = document.getElementById('message');
+
+//checking response
     if (response.ok) {
         messageBox.textContent = 'Inscription réussie !';
         messageBox.style.color = 'green';
 
-        // Redirection vers la page de connexion
+        // then redirect
         setTimeout(() => {
             window.location.href = 'login.html';
         }, 2000);
+//or display an error
     } else {
         messageBox.textContent = result.message || 'Une erreur est survenue.';
     }
