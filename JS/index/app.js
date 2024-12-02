@@ -18,35 +18,85 @@ async function fetchAllPoi() {
     }
 }
 
-function getGeoJsonFromJson(data) {
-    if (!data || !data.batiments || !Array.isArray(data.batiments)) {
-        throw new Error("Données invalides : la structure du JSON est incorrecte.");
+async function fetchVisitedPOI() {
+    const userId = getUserIdFromCookie();
+    if (!userId) {
+        return []; // Tableau vide si l'utilisateur n'est pas connecté
     }
-
-    const geoJson = {
-        type: "FeatureCollection",
-        features: data.batiments.map(batiment => ({
-            type: "Feature",
-            geometry: {
-                type: "Point",
-                coordinates: [batiment.longitude, batiment.latitude],
+    try {
+        const response = await fetch('http://localhost:8000/api/visited/get', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json', // Indique que le body est JSON
+                'Accept': 'application/json',
+                'Origin': 'http://127.0.0.1:5500',
             },
-            properties: {
-                id: batiment.id,
-                name: batiment.name,
-                description: batiment.description,
-                created_at: batiment.created_at,
-                updated_at: batiment.updated_at,
-            }
-        }))
-    };
-    return geoJson;
+            body: JSON.stringify({ user_id: userId }), // Corps JSON contenant user_id
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log(data);
+        return data;
+    } catch (error) {
+        console.error('Erreur lors de la récupération des POIs visités:', error);
+        throw error;
+    }
 }
+
+
+
+
+// Extraire la valeur de user_id
+function getUserIdFromCookie(){
+    const cookies = document.cookie; // Récupérer les cookies dans la variable cookies
+    const userId = cookies
+  .split('; ') // Diviser les cookies en paires clé=valeur
+  .find(row => row.startsWith('user_id=')) // Trouver la paire qui commence par "user_id="
+  ?.split('=')[1]; // Extraire la valeur après le "="
+
+  return userId
+}
+
 
 async function getPOI() {
-    const data = await fetchAllPoi();
-    return getGeoJsonFromJson(data);
+    try {
+        // Récupérer les POI et les bâtiments visités
+        const [allPoiData, visitedPoiData] = await Promise.all([fetchAllPoi(), fetchVisitedPOI()]);
+
+        // Extraire les IDs des bâtiments visités
+        const visitedIds = visitedPoiData.map(poi => poi.id);
+
+        // Générer le GeoJSON avec la propriété 'icon' indiquant le statut de visite
+        const geoJson = {
+            type: "FeatureCollection",
+            features: allPoiData.batiments.map(batiment => ({
+                type: "Feature",
+                geometry: {
+                    type: "Point",
+                    coordinates: [batiment.longitude, batiment.latitude],
+                },
+                properties: {
+                    id: batiment.id,
+                    name: batiment.name,
+                    description: batiment.description,
+                    created_at: batiment.created_at,
+                    updated_at: batiment.updated_at,
+                    icon: visitedIds.includes(batiment.id) ? 'visited' : 'unvisited',
+                }
+            }))
+        };
+
+        return geoJson;
+    } catch (error) {
+        console.error("Erreur lors de la génération du GeoJSON :", error);
+        throw error;
+    }
 }
+
 
 // Map initialisation
 var map = new maptilersdk.Map({
@@ -100,8 +150,7 @@ async function populateChapters() {
 async function populateBuildingDescriptions() {
     try {
         // Récupérer les POIs (points d'intérêt)
-        const data = await fetchAllPoi();
-        const geoJson = getGeoJsonFromJson(data);
+        const geoJson = await getPOI();
 
         // Sélectionner un conteneur pour ajouter les sections
         const container = document.getElementById("features");

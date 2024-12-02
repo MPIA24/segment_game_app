@@ -12,6 +12,7 @@ menuButton.addEventListener('click', () => {
 });
 
 
+//delete the cookie session variable user_id
 function disconnectUser() {
   document.cookie = 'user_id=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC';
   updateAuthState();
@@ -23,6 +24,8 @@ function isUserConnected() {
   return userId!== null;
 }
 
+// Get user ID from cookie
+
 function getUserIdFromCookie() {
   const cookies = document.cookie.split(';');
   for (let i = 0; i < cookies.length; i++) {
@@ -33,6 +36,8 @@ function getUserIdFromCookie() {
   }
   return null;
 }
+
+// Update authentication UI when user logs in or out
 function updateAuthState() {
   if (isUserConnected()) {
     authNotConnected.classList.add('hidden');
@@ -45,6 +50,8 @@ function updateAuthState() {
 
 // Initial state
 updateAuthState();
+
+// Handle logout button click event
 
 logoutButton.addEventListener('click', () => {
   disconnectUser();
