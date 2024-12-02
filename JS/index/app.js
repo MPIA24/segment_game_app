@@ -1,23 +1,5 @@
 maptilersdk.config.apiKey = 'IOB0c3pObw5n5M6qkQcE';
 
-async function fetchNumberOfVisit(userId){
-    try {
-        const response = await fetch('http://localhost:8000/api/visited/get', {
-            method: 'POST',
-            headers: {
-                'Origin': 'http://127.0.0.1:5500',
-                'Accept': 'application/json',
-            },
-            body: JSON.stringify({ userId }),
-        });
-        const data = await response.json();
-        return data.visit_count;
-    } catch (error) {
-        console.error('Erreur lors de la récupération du nombre de visites:', error);
-        throw error;
-    }
-}
-
 async function fetchAllPoi() {
     try {
         const response = await fetch('http://localhost:8000/api/batiments', {
@@ -292,13 +274,7 @@ map.on('load', async function () {
                 visitButton.addEventListener('click', async function () {
                     const validate = postVisit(properties.id, userId);
                     if (validate){
-                        const visitNumber = await fetchNumberOfVisit(userId)
-                        alert(
-                            `
-                                incroyable un batiment de plus de découvert !
-                                cela fait ${visitNumber} batiment(s) découverts !
-                            `
-                        )
+                        alert('batiment visité avec succès !', location.reload())
                     }
             });
     }
@@ -398,4 +374,3 @@ map.on('load', async function () {
 window.onload = function() {
     populateBuildingDescriptions();
 };
-
