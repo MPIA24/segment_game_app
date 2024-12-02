@@ -37,3 +37,7 @@ section:last-child {
     border-bottom: none;
     margin-bottom: 200px;
 }
+.popupText{
+    max-height : 250px;
+    overflow: scroll;
+}

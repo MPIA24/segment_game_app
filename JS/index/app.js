@@ -1,5 +1,22 @@
 maptilersdk.config.apiKey = 'IOB0c3pObw5n5M6qkQcE';
 
+async function fetchNumberOfVisit(userId){
+    try {
+        const response = await fetch('http://localhost:8000/api/visited/get', {
+            method: 'POST',
+            headers: {
+                'Origin': 'http://127.0.0.1:5500',
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({ userId }),
+        });
+        const data = await response.json();
+        return data.visit_count;
+    } catch (error) {
+        console.error('Erreur lors de la récupération du nombre de visites:', error);
+        throw error;
+    }
+}
 
 async function fetchAllPoi() {
     try {
@@ -39,10 +56,35 @@ async function fetchVisitedPOI() {
         }
 
         const data = await response.json();
-        console.log(data);
         return data;
     } catch (error) {
         console.error('Erreur lors de la récupération des POIs visités:', error);
+        throw error;
+    }
+}
+
+async function postVisit(batiment_id, user_id){
+    try {
+        const response = await fetch('http://localhost:8000/api/visited', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'Origin': 'http://127.0.0.1:5500',
+            },
+            body: JSON.stringify({
+                user_id: user_id,
+                batiment_id: batiment_id
+            })
+            
+        });
+        const data = await response.json();
+        if(data)
+        {
+            return true;
+        }
+    } catch (error) {
+        console.error('Erreur lors de l\'enregistrement de la visite:', error);
         throw error;
     }
 }
@@ -68,7 +110,7 @@ async function getPOI() {
         const [allPoiData, visitedPoiData] = await Promise.all([fetchAllPoi(), fetchVisitedPOI()]);
 
         // Extraire les IDs des bâtiments visités
-        const visitedIds = visitedPoiData.map(poi => poi.id);
+        const visitedIds = visitedPoiData.map(poi => poi.batiment_id);
 
         // Générer le GeoJSON avec la propriété 'icon' indiquant le statut de visite
         const geoJson = {
@@ -97,14 +139,6 @@ async function getPOI() {
     }
 }
 
-
-// Map initialisation
-var map = new maptilersdk.Map({
-    container: 'map',
-    style: maptilersdk.MapStyle.STREETS,
-    center: [-0.38, 49.17],
-    zoom: 12,
-});
 
 // Ajouter la logique d'interaction des chapitres
 function createBuildingDescription(batiment) {
@@ -175,7 +209,7 @@ var map = new maptilersdk.Map({
     center: [-0.38, 49.17],
     zoom: 10,
 });
-
+const userId = getUserIdFromCookie();
 // Initialisation de la map et des interactions
 map.on('load', async function () {
     const chapters = await populateChapters();  // Charger dynamiquement les chapitres depuis les POIs
@@ -197,14 +231,20 @@ map.on('load', async function () {
         data: geoJson,
     });
 
+    const imageVisited = await map.loadImage('/IMG/visitedPOI.png');
+    const imageUnvisited = await map.loadImage('/IMG/unvisitedPOI.png');
+
+    map.addImage('visited', imageVisited.data)
+    map.addImage('unvisited', imageUnvisited.data)
+
     // Ajouter une couche pour afficher les pointeurs sur les POIs
     map.addLayer({
         id: 'poi-markers',
-        type: 'circle',
+        type: 'symbol',
         source: 'pois',
-        paint: {
-            'circle-radius': 8,
-            'circle-color': '#007cbf',
+        layout: {
+            'icon-image' : ['get', 'icon'],
+            'icon-size' : 0.5,
         },
     });
 
@@ -229,13 +269,44 @@ map.on('load', async function () {
             curve: 1,
         });
 
+        let popupHTML = `
+        <h3>${properties.name}</h3>
+        <p class="popupText">${properties.description}</p>
+        `;
+
+        // Si l'utilisateur est connecté, ajouter le bouton "Visiter"
+        if (userId) {
+            popupHTML += `<button id="visitButton">Visiter</button>`;
+        }else{
+            popupHTML += `<a href="login.html"><p>Connectez-vous pour visiter le batiment.</p></a>`;
+        }
         // Ajouter une popup
         new maptilersdk.Popup()
             .setLngLat(coordinates)
-            .setHTML(`<h3>${properties.name}</h3><p>${properties.description}</p>`)
+            .setHTML(popupHTML)
             .addTo(map);
+
+         setTimeout(() => {
+            const visitButton = document.getElementById('visitButton');
+            if (visitButton) {
+                visitButton.addEventListener('click', async function () {
+                    const validate = postVisit(properties.id, userId);
+                    if (validate){
+                        const visitNumber = await fetchNumberOfVisit(userId)
+                        alert(
+                            `
+                                incroyable un batiment de plus de découvert !
+                                cela fait ${visitNumber} batiment(s) découverts !
+                            `
+                        )
+                    }
+            });
+    }
+}, 0); 
+            
     });
 
+    
     // Changer le curseur de la souris lorsqu'il survole un pointeur
     map.on('mouseenter', 'poi-markers', function () {
         map.getCanvas().style.cursor = 'pointer';
