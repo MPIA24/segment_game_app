@@ -115,3 +115,33 @@ footer {
   hr {
     margin: 10px 0;
   }
+
+  .legend-item {
+    margin-bottom: 10px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+.color-circle {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 10px;
+}
+
+.legend-name {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.legend-locomotion {
+    margin-bottom: 5px;
+}
+
+.legend-poi-list {
+    margin-bottom: 5px;
+}
+

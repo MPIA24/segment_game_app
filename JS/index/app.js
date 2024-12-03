@@ -197,14 +197,6 @@ map.on('load', async function () {
     const chapters = await populateChapters();  // Charger dynamiquement les chapitres depuis les POIs
     var activeChapterId = Object.keys(chapters)[0];  // Le premier POI sera le chapitre actif initialement
 
-    // Configurer les 3D buildings
-    var layers = map.getStyle().layers;
-    for (var i = 0; i < layers.length; i++) {
-        if (layers[i].type === 'symbol' && layers[i].layout['text-field']) {
-            map.removeLayer(layers[i].id);
-        }
-    }
-
     const geoJson = await getPOI(); // Obtenez les données GeoJSON
     
     // Ajouter une source GeoJSON pour les POIs
