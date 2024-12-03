@@ -129,8 +129,6 @@ async function fetchRouteAndFormatInGeoJSONLine(tours) {
 //add the name, the adviced mobility and the list of the name of POI on every tour according to their color
 function generateLegend(routesGeoJSON) {
     const featuresDiv = document.getElementById('features');
-    featuresDiv.innerHTML = '';
-
     routesGeoJSON.forEach(({ geojson }) => {
         const { name, color, adviced_locomotion, poiNames } = geojson.properties;
         const legendItem = document.createElement('div');
