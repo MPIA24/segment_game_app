@@ -3,10 +3,10 @@ maptilersdk.config.apiKey = 'IOB0c3pObw5n5M6qkQcE';
 
 async function fetchAllPoi() {
     try {
-        const response = await fetch('http://localhost:8000/api/batiments', {
+        const response = await fetch('http://cestpasunvirus.fr:8001/api/batiments', {
             method: 'GET',
             headers: {
-                'Origin': 'http://127.0.0.1:5500',
+                'Origin': 'http://cestpasunvirus.fr:8001',
                 'Accept': 'application/json',
             }
         });
